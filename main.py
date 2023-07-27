@@ -59,7 +59,7 @@ if __name__ == '__main__':
     token_dd = os.environ['TOKEN_DD']
     # city = "北京"
     # token_dd = '你自己的webhook后面的access_token复制在此'
-    wea, temperature = get_weather()
+    # wea, temperature = get_weather()
 
     note_str = "当前城市"#：{0}\n今日天气：{1}\n当前温度：{2}\n{3}".format(city, wea, temperature, get_words())
 
