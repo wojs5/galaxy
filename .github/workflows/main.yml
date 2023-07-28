@@ -26,3 +26,5 @@ jobs:
     env:
       TOKEN_DD: ${{ secrets.TOKEN_DD }}
       CITY: ${{ secrets.CITY }}
+      SECRET_DD: ${{ secrets.SECRET_DD }}
+      WEATHER_KEY: ${{ secrets.WEATHER_KEY }}
