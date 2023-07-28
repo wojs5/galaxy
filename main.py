@@ -4,14 +4,22 @@ import json
 import random
 import requests
 import datetime
+import time
+import hmac
+import hashlib
+import base64
+import urllib.parse
 
 
 # 获取天气和温度
+# https://dev.qweather.com/ 和风天气开发服务
 def get_weather():
-    url = "http://autodev.openspeech.cn/csp/api/v2.1/weather?openId=aiuicus&clientType=android&sign=android&city=" + city
+    url = "https://devapi.qweather.com/v7/weather/now?key=" + weather_key + "&location=" + city
     res = requests.get(url).json()
-    weather = res['data']['list'][0]
-    return weather['weather'], math.floor(weather['temp'])
+    if(res['code']!='200'):
+        return "天气数据请求错误",res['code']
+    weather = res['now']
+    return weather['text'], weather['temp']
 
 
 # 每日一句
@@ -35,9 +43,10 @@ def send_msg(token_dd, msg, at_all=False):
     @param at_all:
     @return:
     """
-    url = 'https://oapi.dingtalk.com/robot/send?access_token=' + token_dd
+    timestamp,sign = dd_code()
+    url = 'https://oapi.dingtalk.com/robot/send?access_token=' + token_dd + '&timestamp=' + timestamp + '&sign=' + sign
     headers = {'Content-Type': 'application/json;charset=utf-8'}
-    content_str = "早上好！\n\n{0}\n".format(msg)
+    content_str = "早安！\n\n{0}\n".format(msg)
 
     data = {
         "msgtype": "text",
@@ -53,15 +62,27 @@ def send_msg(token_dd, msg, at_all=False):
 
     return res.text
 
+def dd_code():
+    timestamp = str(round(time.time() * 1000))
+    secret_enc = secret_dd.encode('utf-8')
+    string_to_sign = '{}\n{}'.format(timestamp, secret_dd)
+    string_to_sign_enc = string_to_sign.encode('utf-8')
+    hmac_code = hmac.new(secret_enc, string_to_sign_enc, digestmod=hashlib.sha256).digest()
+    sign = urllib.parse.quote_plus(base64.b64encode(hmac_code))
+    return timestamp,sign
+
 
 if __name__ == '__main__':
     city = os.environ['CITY']
     token_dd = os.environ['TOKEN_DD']
-    # city = "北京"
-    # token_dd = '你自己的webhook后面的access_token复制在此'
-    # wea, temperature = get_weather()
+    secret_dd = os.environ['SECRET_DD']
+    weather_key = os.environ['WEATHER_KEY']
+    #weather_key = ''
+    #secret_dd = ''
+    #city = "101210101"
+    #token_dd = '你自己的webhook后面的access_token复制在此'
+    wea, temperature = get_weather()
 
-    note_str = "当前城市"#：{0}\n今日天气：{1}\n当前温度：{2}\n{3}".format(city, wea, temperature, get_words())
-    note_str = "当前城市：{0}\n{1}".format(city, get_words())
+    note_str = "当前城市：{0}\n今日天气：{1}\n当前温度：{2}\n{3}".format("杭州", wea, temperature, get_words())
 
     send_msg(token_dd, note_str, True)
